@@ -71,6 +71,7 @@ export const api = {
       body: JSON.stringify(data),
     }),
   deleteSecret: (id) => fetchWithAuth(`/secrets/${id}`, { method: 'DELETE' }),
+  getSecret: (id) => fetchWithAuth(`/secrets/${id}`, { method: 'GET' }),
 
   // Media
   getMedia: () => fetchWithAuth('/media', { method: 'GET' }),

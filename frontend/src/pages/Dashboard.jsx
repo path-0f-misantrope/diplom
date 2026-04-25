@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { api, removeAuthToken } from '../services/api';
 import { useNavigate, Link } from 'react-router-dom';
-import { LogOut, FileText, UploadCloud, Trash2, Shield, Download } from 'lucide-react';
+import { LogOut, FileText, UploadCloud, Trash2, Shield, Eye, Download } from 'lucide-react';
 
 export default function Dashboard() {
   const [secrets, setSecrets] = useState([]);
   const [media, setMedia] = useState([]);
+  const [revealedSecrets, setRevealedSecrets] = useState({}); // id -> payload
   const [newTitle, setNewTitle] = useState('');
   const [newPayload, setNewPayload] = useState('');
   const [loading, setLoading] = useState(true);
@@ -58,7 +59,22 @@ export default function Dashboard() {
     if (!window.confirm('Are you sure?')) return;
     try {
       await api.deleteSecret(id);
+      setRevealedSecrets(prev => { const n = {...prev}; delete n[id]; return n; });
       loadData();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleRevealSecret = async (id) => {
+    if (revealedSecrets[id] !== undefined) {
+      // already revealed — hide it
+      setRevealedSecrets(prev => { const n = {...prev}; delete n[id]; return n; });
+      return;
+    }
+    try {
+      const data = await api.getSecret(id);
+      setRevealedSecrets(prev => ({ ...prev, [id]: data.payload }));
     } catch (err) {
       alert(err.message);
     }
@@ -157,14 +173,43 @@ export default function Dashboard() {
                 <p style={{ color: 'var(--text-secondary)' }}>No secrets found.</p>
               ) : (
                 secrets.map(secret => (
-                  <div key={secret.id} style={{ background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                      <h4 style={{ margin: 0, color: 'var(--accent)' }}>{secret.title}</h4>
-                      <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '4px' }}>id: {secret.id}</div>
+                  <div key={secret.id} style={{ background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: '8px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <h4 style={{ margin: 0, color: 'var(--accent)' }}>{secret.title}</h4>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                          {new Date(secret.created_at).toLocaleString()}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button
+                          onClick={() => handleRevealSecret(secret.id)}
+                          className="btn btn-ghost"
+                          style={{ width: 'auto', padding: '8px', border: 'none' }}
+                          title={revealedSecrets[secret.id] !== undefined ? 'Hide' : 'Reveal'}
+                        >
+                          <Eye size={16} />
+                        </button>
+                        <button onClick={() => handleDeleteSecret(secret.id)} className="btn btn-danger" style={{ width: 'auto', padding: '8px' }}>
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
                     </div>
-                    <button onClick={() => handleDeleteSecret(secret.id)} className="btn btn-danger" style={{ width: 'auto', padding: '8px' }}>
-                      <Trash2 size={16} />
-                    </button>
+                    {revealedSecrets[secret.id] !== undefined && (
+                      <div style={{
+                        marginTop: '12px',
+                        padding: '10px',
+                        background: 'rgba(255,255,255,0.05)',
+                        borderRadius: '6px',
+                        fontFamily: 'monospace',
+                        fontSize: '0.9rem',
+                        color: 'var(--text-primary)',
+                        wordBreak: 'break-all',
+                        whiteSpace: 'pre-wrap',
+                      }}>
+                        {revealedSecrets[secret.id]}
+                      </div>
+                    )}
                   </div>
                 ))
               )}
