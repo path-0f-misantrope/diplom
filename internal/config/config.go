@@ -1,31 +1,32 @@
 // Package config загружает и валидирует конфигурацию приложения из
-// переменных окружения и .env файла с помощью viper.
+// переменных окружения и .env файла с помощью godotenv.
 package config
 
 import (
 	"fmt"
-	"strings"
+	"os"
+	"strconv"
 	"time"
 
-	"github.com/spf13/viper"
+	"github.com/joho/godotenv"
 )
 
 // Config — корневая структура конфигурации приложения.
 type Config struct {
-	App      AppConfig
-	DB       DBConfig
-	Redis    RedisConfig
-	MinIO    MinIOConfig
-	JWT      JWTConfig
-	Crypto   CryptoConfig
-	Upload   UploadConfig
+	App    AppConfig
+	DB     DBConfig
+	Redis  RedisConfig
+	MinIO  MinIOConfig
+	JWT    JWTConfig
+	Crypto CryptoConfig
+	Upload UploadConfig
 }
 
 // AppConfig — параметры HTTP-сервера.
 type AppConfig struct {
-	Env       string // development | production
-	Port      int
-	LogLevel  string // debug | info | warn | error
+	Env      string // development | production
+	Port     int
+	LogLevel string // debug | info | warn | error
 }
 
 // DBConfig — параметры подключения к PostgreSQL.
@@ -83,90 +84,64 @@ type UploadConfig struct {
 }
 
 // Load читает конфигурацию из переменных среды / .env файла.
-// Переменные окружения имеют приоритет над .env.
 func Load() (*Config, error) {
-	v := viper.New()
-
-	// Значения по умолчанию
-	v.SetDefault("app.env", "development")
-	v.SetDefault("app.port", 8080)
-	v.SetDefault("app.log_level", "info")
-
-	v.SetDefault("db.host", "localhost")
-	v.SetDefault("db.port", 5432)
-	v.SetDefault("db.sslmode", "disable")
-	v.SetDefault("db.max_conns", 25)
-	v.SetDefault("db.min_conns", 5)
-
-	v.SetDefault("redis.db", 0)
-
-	v.SetDefault("minio.use_ssl", false)
-	v.SetDefault("minio.bucket", "secure-media")
-
-	v.SetDefault("jwt.access_ttl", "15m")
-	v.SetDefault("jwt.refresh_ttl", "168h") // 7 дней
-
-	v.SetDefault("upload.max_size", 104857600) // 100MB
-
-	// Загружаем .env файл (если присутствует)
-	v.SetConfigName(".env")
-	v.SetConfigType("env")
-	v.AddConfigPath(".")
-	_ = v.ReadInConfig() // Ошибка игнорируется — .env необязателен
-
-	// Читаем из переменных окружения
-	v.AutomaticEnv()
-	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	// Загружаем .env файл в переменные окружения OS.
+	// Ошибку игнорируем, так как в production среде файла .env может не быть,
+	// и переменные будут заданы на уровне системы (например, через Docker).
+	// Загружаем .env файл. Сначала пробуем в текущей директории, 
+	// затем в корне проекта (если запускаем из cmd/server).
+	_ = godotenv.Load(".env")
+	_ = godotenv.Load("../../.env")
 
 	// Парсим длительности JWT
-	accessTTL, err := time.ParseDuration(v.GetString("jwt.access_ttl"))
+	accessTTL, err := time.ParseDuration(getEnv("JWT_ACCESS_TTL", "15m"))
 	if err != nil {
 		return nil, fmt.Errorf("config: неверный JWT_ACCESS_TTL: %w", err)
 	}
 
-	refreshTTL, err := time.ParseDuration(v.GetString("jwt.refresh_ttl"))
+	refreshTTL, err := time.ParseDuration(getEnv("JWT_REFRESH_TTL", "168h")) // 7 дней
 	if err != nil {
 		return nil, fmt.Errorf("config: неверный JWT_REFRESH_TTL: %w", err)
 	}
 
 	cfg := &Config{
 		App: AppConfig{
-			Env:      v.GetString("app.env"),
-			Port:     v.GetInt("app.port"),
-			LogLevel: v.GetString("app.log_level"),
+			Env:      getEnv("APP_ENV", "development"),
+			Port:     getEnvAsInt("APP_PORT", 8080),
+			LogLevel: getEnv("APP_LOG_LEVEL", "info"),
 		},
 		DB: DBConfig{
-			Host:     v.GetString("db.host"),
-			Port:     v.GetInt("db.port"),
-			User:     v.GetString("db.user"),
-			Password: v.GetString("db.password"),
-			Name:     v.GetString("db.name"),
-			SSLMode:  v.GetString("db.sslmode"),
-			MaxConns: int32(v.GetInt("db.max_conns")),
-			MinConns: int32(v.GetInt("db.min_conns")),
+			Host:     getEnv("DB_HOST", "localhost"),
+			Port:     getEnvAsInt("DB_PORT", 5432),
+			User:     getEnv("DB_USER", ""),
+			Password: getEnv("DB_PASSWORD", ""),
+			Name:     getEnv("DB_NAME", ""),
+			SSLMode:  getEnv("DB_SSLMODE", "disable"),
+			MaxConns: int32(getEnvAsInt("DB_MAX_CONNS", 25)),
+			MinConns: int32(getEnvAsInt("DB_MIN_CONNS", 5)),
 		},
 		Redis: RedisConfig{
-			Addr:     v.GetString("redis.addr"),
-			Password: v.GetString("redis.password"),
-			DB:       v.GetInt("redis.db"),
+			Addr:     getEnv("REDIS_ADDR", ""),
+			Password: getEnv("REDIS_PASSWORD", ""),
+			DB:       getEnvAsInt("REDIS_DB", 0),
 		},
 		MinIO: MinIOConfig{
-			Endpoint:  v.GetString("minio.endpoint"),
-			AccessKey: v.GetString("minio.access_key"),
-			SecretKey: v.GetString("minio.secret_key"),
-			UseSSL:    v.GetBool("minio.use_ssl"),
-			Bucket:    v.GetString("minio.bucket"),
+			Endpoint:  getEnv("MINIO_ENDPOINT", ""),
+			AccessKey: getEnv("MINIO_ACCESS_KEY", ""),
+			SecretKey: getEnv("MINIO_SECRET_KEY", ""),
+			UseSSL:    getEnvAsBool("MINIO_USE_SSL", false),
+			Bucket:    getEnv("MINIO_BUCKET", "secure-media"),
 		},
 		JWT: JWTConfig{
-			Secret:     v.GetString("jwt.secret"),
+			Secret:     getEnv("JWT_SECRET", ""),
 			AccessTTL:  accessTTL,
 			RefreshTTL: refreshTTL,
 		},
 		Crypto: CryptoConfig{
-			EncryptionKey: v.GetString("app.encryption_key"),
+			EncryptionKey: getEnv("APP_ENCRYPTION_KEY", ""),
 		},
 		Upload: UploadConfig{
-			MaxSize: v.GetInt64("upload.max_size"),
+			MaxSize: getEnvAsInt64("UPLOAD_MAX_SIZE", 104857600), // 100MB
 		},
 	}
 
@@ -201,4 +176,41 @@ func validate(cfg *Config) error {
 		return fmt.Errorf("config: MINIO_ACCESS_KEY и MINIO_SECRET_KEY не заданы")
 	}
 	return nil
+}
+
+// --- Вспомогательные функции для чтения переменных окружения ---
+
+// getEnv читает переменную окружения или возвращает значение по умолчанию.
+func getEnv(key string, defaultVal string) string {
+	if value, exists := os.LookupEnv(key); exists {
+		return value
+	}
+	return defaultVal
+}
+
+// getEnvAsInt читает переменную окружения как int или возвращает defaultVal.
+func getEnvAsInt(key string, defaultVal int) int {
+	valueStr := getEnv(key, "")
+	if value, err := strconv.Atoi(valueStr); err == nil {
+		return value
+	}
+	return defaultVal
+}
+
+// getEnvAsInt64 читает переменную окружения как int64 или возвращает defaultVal.
+func getEnvAsInt64(key string, defaultVal int64) int64 {
+	valueStr := getEnv(key, "")
+	if value, err := strconv.ParseInt(valueStr, 10, 64); err == nil {
+		return value
+	}
+	return defaultVal
+}
+
+// getEnvAsBool читает переменную окружения как bool или возвращает defaultVal.
+func getEnvAsBool(key string, defaultVal bool) bool {
+	valueStr := getEnv(key, "")
+	if value, err := strconv.ParseBool(valueStr); err == nil {
+		return value
+	}
+	return defaultVal
 }
