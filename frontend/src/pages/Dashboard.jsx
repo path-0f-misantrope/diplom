@@ -20,11 +20,11 @@ export default function Dashboard() {
     try {
       setLoading(true);
       const [secretsRes, mediaRes] = await Promise.all([
-        api.getSecrets().catch(() => []), 
-        api.getMedia().catch(() => [])
+        api.getSecrets().catch(() => ({ data: [] })),
+        api.getMedia().catch(() => ({ data: [] }))
       ]);
-      setSecrets(secretsRes || []);
-      setMedia(mediaRes || []);
+      setSecrets(secretsRes?.data || []);
+      setMedia(mediaRes?.data || []);
     } catch (error) {
       console.error(error);
     } finally {
