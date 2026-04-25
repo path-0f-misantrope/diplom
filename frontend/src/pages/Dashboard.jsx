@@ -7,7 +7,7 @@ export default function Dashboard() {
   const [secrets, setSecrets] = useState([]);
   const [media, setMedia] = useState([]);
   const [newTitle, setNewTitle] = useState('');
-  const [newContent, setNewContent] = useState('');
+  const [newPayload, setNewPayload] = useState('');
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const navigate = useNavigate();
@@ -45,9 +45,9 @@ export default function Dashboard() {
   const handleCreateSecret = async (e) => {
     e.preventDefault();
     try {
-      await api.createSecret({ title: newTitle, content: newContent });
+      await api.createSecret({ title: newTitle, payload: newPayload });
       setNewTitle('');
-      setNewContent('');
+      setNewPayload('');
       loadData();
     } catch (err) {
       alert(err.message);
@@ -144,8 +144,8 @@ export default function Dashboard() {
                 className="input-field" 
                 placeholder="Top Secret Content..." 
                 rows="3" 
-                value={newContent} 
-                onChange={e => setNewContent(e.target.value)} 
+                value={newPayload} 
+                onChange={e => setNewPayload(e.target.value)} 
                 style={{ resize: 'vertical' }}
                 required 
               />
