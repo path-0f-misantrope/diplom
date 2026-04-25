@@ -4,7 +4,7 @@ import { api, setAuthToken } from '../services/api';
 import { Lock } from 'lucide-react';
 
 export default function Login() {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -16,8 +16,8 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const { token } = await api.login({ username, password });
-      setAuthToken(token);
+      const { access_token } = await api.login({ email, password });
+      setAuthToken(access_token);
       navigate('/dashboard');
     } catch (err) {
       setError(err.message);
@@ -39,13 +39,13 @@ export default function Login() {
 
         <form onSubmit={handleLogin}>
           <input
-            type="text"
+            type="email"
             className="input-field"
-            placeholder="Username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             required
-            autoComplete="username"
+            autoComplete="email"
           />
           <input
             type="password"
