@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { api, removeAuthToken } from '../services/api';
 import { useNavigate, Link } from 'react-router-dom';
-import { LogOut, FileText, UploadCloud, Trash2, Shield, Eye, Download } from 'lucide-react';
+import { LogOut, FileText, UploadCloud, Trash2, Shield, Eye, Download, Image } from 'lucide-react';
 
 export default function Dashboard() {
   const [secrets, setSecrets] = useState([]);
   const [media, setMedia] = useState([]);
   const [revealedSecrets, setRevealedSecrets] = useState({}); // id -> payload
+  const [previewedMedia, setPreviewedMedia] = useState({});   // id -> { url, contentType }
   const [newTitle, setNewTitle] = useState('');
   const [newPayload, setNewPayload] = useState('');
   const [loading, setLoading] = useState(true);
@@ -117,9 +118,30 @@ export default function Dashboard() {
     if (!window.confirm('Delete media?')) return;
     try {
       await api.deleteMedia(id);
+      // освобождаем objectURL если был превью
+      if (previewedMedia[id]) {
+        window.URL.revokeObjectURL(previewedMedia[id].url);
+        setPreviewedMedia(prev => { const n = {...prev}; delete n[id]; return n; });
+      }
       loadData();
     } catch (err) {
       alert(err.message);
+    }
+  };
+
+  const handlePreviewMedia = async (id, contentType) => {
+    // если уже открыт — закрыть и освободить память
+    if (previewedMedia[id]) {
+      window.URL.revokeObjectURL(previewedMedia[id].url);
+      setPreviewedMedia(prev => { const n = {...prev}; delete n[id]; return n; });
+      return;
+    }
+    try {
+      const blob = await api.downloadMedia(id);
+      const url = window.URL.createObjectURL(blob);
+      setPreviewedMedia(prev => ({ ...prev, [id]: { url, contentType } }));
+    } catch (err) {
+      alert('Не удалось загрузить превью');
     }
   };
 
@@ -237,19 +259,55 @@ export default function Dashboard() {
                 <p style={{ color: 'var(--text-secondary)' }}>No files uploaded.</p>
               ) : (
                 media.map(m => (
-                  <div key={m.id} style={{ background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginRight: '16px' }}>
-                      <h4 style={{ margin: 0 }}>{m.filename}</h4>
-                      <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{(m.size / 1024).toFixed(1)} KB</span>
+                  <div key={m.id} style={{ background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: '8px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginRight: '16px' }}>
+                        <h4 style={{ margin: 0 }}>{m.filename}</h4>
+                        <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                          {(m.size_bytes / 1024).toFixed(1)} KB &nbsp;·&nbsp; {m.content_type}
+                        </span>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                          {new Date(m.created_at).toLocaleString()}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+                        {(m.content_type?.startsWith('image/') || m.content_type?.startsWith('video/')) && (
+                          <button
+                            onClick={() => handlePreviewMedia(m.id, m.content_type)}
+                            className="btn btn-ghost"
+                            style={{ width: 'auto', padding: '8px', border: 'none' }}
+                            title={previewedMedia[m.id] ? 'Скрыть' : 'Превью'}
+                          >
+                            <Eye size={16} />
+                          </button>
+                        )}
+                        <button onClick={() => handleDownloadMedia(m.id, m.filename)} className="btn btn-ghost" style={{ width: 'auto', padding: '8px', border: 'none' }} title="Download">
+                          <Download size={16} />
+                        </button>
+                        <button onClick={() => handleDeleteMedia(m.id)} className="btn btn-danger" style={{ width: 'auto', padding: '8px' }} title="Delete">
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
                     </div>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <button onClick={() => handleDownloadMedia(m.id, m.filename)} className="btn btn-ghost" style={{ width: 'auto', padding: '8px', border: 'none' }} title="Download">
-                        <Download size={16} />
-                      </button>
-                      <button onClick={() => handleDeleteMedia(m.id)} className="btn btn-danger" style={{ width: 'auto', padding: '8px' }} title="Delete">
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
+
+                    {/* Inline preview */}
+                    {previewedMedia[m.id] && (
+                      <div style={{ marginTop: '12px', borderRadius: '8px', overflow: 'hidden', background: 'rgba(0,0,0,0.3)' }}>
+                        {previewedMedia[m.id].contentType.startsWith('image/') ? (
+                          <img
+                            src={previewedMedia[m.id].url}
+                            alt={m.filename}
+                            style={{ width: '100%', maxHeight: '400px', objectFit: 'contain', display: 'block' }}
+                          />
+                        ) : (
+                          <video
+                            src={previewedMedia[m.id].url}
+                            controls
+                            style={{ width: '100%', maxHeight: '400px', display: 'block' }}
+                          />
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))
               )}
