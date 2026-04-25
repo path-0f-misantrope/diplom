@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api, removeAuthToken } from '../services/api';
-import { useNavigate } from 'react-router-dom';
-import { LogOut, FileText, UploadCloud, Trash2, Shield, Eye, Download } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+import { LogOut, FileText, UploadCloud, Trash2, Shield, Download } from 'lucide-react';
 
 export default function Dashboard() {
   const [secrets, setSecrets] = useState([]);
@@ -217,5 +217,3 @@ export default function Dashboard() {
   );
 }
 
-// Хак для переиспользования Link из react-router-dom без реимпорта в файле
-import { Link } from 'react-router-dom';
