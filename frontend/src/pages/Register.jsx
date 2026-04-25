@@ -5,6 +5,7 @@ import { ShieldCheck } from 'lucide-react';
 
 export default function Register() {
   const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
@@ -17,7 +18,7 @@ export default function Register() {
     setLoading(true);
 
     try {
-      await api.register({ username, password });
+      await api.register({ username, email, password });
       setSuccess(true);
       setTimeout(() => navigate('/login'), 2000);
     } catch (err) {
@@ -48,6 +49,16 @@ export default function Register() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               required
+              minLength={3}
+              maxLength={64}
+            />
+            <input
+              type="email"
+              className="input-field"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
             />
             <input
               type="password"
@@ -56,7 +67,7 @@ export default function Register() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              minLength={6}
+              minLength={8}
             />
             <button type="submit" className="btn" disabled={loading} style={{ background: 'var(--success)' }}>
               {loading ? <span className="spinner"></span> : 'Sign Up'}
