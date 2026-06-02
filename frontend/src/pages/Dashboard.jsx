@@ -12,6 +12,7 @@ export default function Dashboard() {
   const [newPayload, setNewPayload] = useState('');
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [userRole, setUserRole] = useState('user');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -21,12 +22,16 @@ export default function Dashboard() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [secretsRes, mediaRes] = await Promise.all([
+      const [secretsRes, mediaRes, userRes] = await Promise.all([
         api.getSecrets().catch(() => ({ data: [] })),
-        api.getMedia().catch(() => ({ data: [] }))
+        api.getMedia().catch(() => ({ data: [] })),
+        api.getMe().catch(() => ({}))
       ]);
       setSecrets(secretsRes?.data || []);
       setMedia(mediaRes?.data || []);
+      if (userRes && userRes.role) {
+        setUserRole(userRes.role);
+      }
     } catch (error) {
       console.error(error);
     } finally {
@@ -155,7 +160,12 @@ export default function Dashboard() {
         <Link to="/dashboard" className="logo">
           <Shield size={24} /> Secure Storage
         </Link>
-        <div className="user-info">
+        <div className="user-info" style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+          {(userRole === 'admin' || userRole === 'manager') && (
+            <Link to="/admin" className="btn btn-ghost" style={{ padding: '8px 16px', textDecoration: 'none', color: '#ffaaaa' }}>
+              Admin Panel
+            </Link>
+          )}
           <button onClick={handleLogout} className="btn btn-ghost" style={{ padding: '8px 16px' }}>
             <LogOut size={16} /> Logout
           </button>

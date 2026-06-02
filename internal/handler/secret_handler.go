@@ -18,11 +18,12 @@ import (
 // SecretHandler — хендлер управления секретами.
 type SecretHandler struct {
 	secretSvc service.SecretService
+	auditSvc  service.AuditService
 }
 
 // NewSecretHandler создаёт новый SecretHandler.
-func NewSecretHandler(secretSvc service.SecretService) *SecretHandler {
-	return &SecretHandler{secretSvc: secretSvc}
+func NewSecretHandler(secretSvc service.SecretService, auditSvc service.AuditService) *SecretHandler {
+	return &SecretHandler{secretSvc: secretSvc, auditSvc: auditSvc}
 }
 
 // Create godoc
@@ -45,12 +46,20 @@ func (h *SecretHandler) Create(c *gin.Context) {
 	}
 
 	resp, err := h.secretSvc.Create(c.Request.Context(), claims.UserID, req)
+	
+	ip := c.ClientIP()
+	ua := c.Request.UserAgent()
+	resource := "secrets"
+
 	if err != nil {
 		log.Error().Err(err).Msg("SecretHandler.Create")
+		details := err.Error()
+		h.auditSvc.LogAction(c.Request.Context(), &claims.UserID, "create", &resource, nil, &ip, &ua, "failure", &details)
 		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "ошибка создания секрета"})
 		return
 	}
 
+	h.auditSvc.LogAction(c.Request.Context(), &claims.UserID, "create", &resource, &resp.ID, &ip, &ua, "success", nil)
 	c.JSON(http.StatusCreated, resp)
 }
 
@@ -72,11 +81,19 @@ func (h *SecretHandler) GetByID(c *gin.Context) {
 	}
 
 	resp, err := h.secretSvc.GetByID(c.Request.Context(), claims.UserID, claims.RoleName, id)
+	
+	ip := c.ClientIP()
+	ua := c.Request.UserAgent()
+	resource := "secrets"
+
 	if err != nil {
+		details := err.Error()
+		h.auditSvc.LogAction(c.Request.Context(), &claims.UserID, "read", &resource, &id, &ip, &ua, "failure", &details)
 		h.handleSecretError(c, err)
 		return
 	}
 
+	h.auditSvc.LogAction(c.Request.Context(), &claims.UserID, "read", &resource, &id, &ip, &ua, "success", nil)
 	c.JSON(http.StatusOK, resp)
 }
 
@@ -134,11 +151,19 @@ func (h *SecretHandler) Update(c *gin.Context) {
 	}
 
 	resp, err := h.secretSvc.Update(c.Request.Context(), claims.UserID, id, req)
+	
+	ip := c.ClientIP()
+	ua := c.Request.UserAgent()
+	resource := "secrets"
+
 	if err != nil {
+		details := err.Error()
+		h.auditSvc.LogAction(c.Request.Context(), &claims.UserID, "update", &resource, &id, &ip, &ua, "failure", &details)
 		h.handleSecretError(c, err)
 		return
 	}
 
+	h.auditSvc.LogAction(c.Request.Context(), &claims.UserID, "update", &resource, &id, &ip, &ua, "success", nil)
 	c.JSON(http.StatusOK, resp)
 }
 
@@ -158,11 +183,18 @@ func (h *SecretHandler) Delete(c *gin.Context) {
 		return
 	}
 
+	ip := c.ClientIP()
+	ua := c.Request.UserAgent()
+	resource := "secrets"
+
 	if err := h.secretSvc.Delete(c.Request.Context(), claims.UserID, claims.RoleName, id); err != nil {
+		details := err.Error()
+		h.auditSvc.LogAction(c.Request.Context(), &claims.UserID, "delete", &resource, &id, &ip, &ua, "failure", &details)
 		h.handleSecretError(c, err)
 		return
 	}
 
+	h.auditSvc.LogAction(c.Request.Context(), &claims.UserID, "delete", &resource, &id, &ip, &ua, "success", nil)
 	c.Status(http.StatusNoContent)
 }
 

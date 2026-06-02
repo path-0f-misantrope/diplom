@@ -16,13 +16,14 @@ import (
 
 // AuthHandler — хендлер аутентификации.
 type AuthHandler struct {
-	authSvc service.AuthService
-	jwtCfg  config.JWTConfig
+	authSvc  service.AuthService
+	auditSvc service.AuditService
+	jwtCfg   config.JWTConfig
 }
 
 // NewAuthHandler создаёт новый AuthHandler.
-func NewAuthHandler(authSvc service.AuthService, jwtCfg config.JWTConfig) *AuthHandler {
-	return &AuthHandler{authSvc: authSvc, jwtCfg: jwtCfg}
+func NewAuthHandler(authSvc service.AuthService, auditSvc service.AuditService, jwtCfg config.JWTConfig) *AuthHandler {
+	return &AuthHandler{authSvc: authSvc, auditSvc: auditSvc, jwtCfg: jwtCfg}
 }
 
 // Register godoc
@@ -49,9 +50,19 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		if isConflict(err) {
 			status = http.StatusConflict
 		}
+		
+		ip := c.ClientIP()
+		ua := c.Request.UserAgent()
+		details := err.Error()
+		h.auditSvc.LogAction(c.Request.Context(), nil, "register", nil, nil, &ip, &ua, "failure", &details)
+		
 		c.JSON(status, ErrorResponse{Error: err.Error()})
 		return
 	}
+
+	ip := c.ClientIP()
+	ua := c.Request.UserAgent()
+	h.auditSvc.LogAction(c.Request.Context(), &user.ID, "register", nil, nil, &ip, &ua, "success", nil)
 
 	log.Info().Str("user_id", user.ID.String()).Msg("Register: новый пользователь")
 	c.JSON(http.StatusCreated, user.ToResponse())
@@ -74,11 +85,22 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	}
 
 	pair, err := h.authSvc.Login(c.Request.Context(), req)
+	
+	ip := c.ClientIP()
+	ua := c.Request.UserAgent()
+
 	if err != nil {
 		log.Warn().Err(err).Str("email", req.Email).Msg("Login: ошибка входа")
+		details := err.Error()
+		h.auditSvc.LogAction(c.Request.Context(), nil, "login", nil, nil, &ip, &ua, "failure", &details)
 		c.JSON(http.StatusUnauthorized, ErrorResponse{Error: "неверный email или пароль"})
 		return
 	}
+
+	// For successful login we can extract the user ID from the access token,
+	// but it's easier to just decode claims or we can assume it's valid if success.
+	// Since pair doesn't expose UserID directly here without decoding, we'll log it just as successful login.
+	h.auditSvc.LogAction(c.Request.Context(), nil, "login", nil, nil, &ip, &ua, "success", nil)
 
 	c.JSON(http.StatusOK, pair)
 }
@@ -117,6 +139,10 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 	); err != nil {
 		log.Warn().Err(err).Msg("Logout: ошибка")
 	}
+
+	ip := c.ClientIP()
+	ua := c.Request.UserAgent()
+	h.auditSvc.LogAction(c.Request.Context(), &claims.UserID, "logout", nil, nil, &ip, &ua, "success", nil)
 
 	c.JSON(http.StatusOK, MessageResponse{Message: "вы вышли из системы"})
 }

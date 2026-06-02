@@ -101,24 +101,27 @@ func main() {
 	secretRepo  := pgRepo.NewSecretRepository(pool)
 	mediaRepo   := pgRepo.NewMediaRepository(pool)
 	sessionRepo := redisRepo.NewSessionRepository(redisClient)
+	auditRepo   := pgRepo.NewAuditRepository(pool)
 
 	// ── 8. Сервисы ────────────────────────────────────────────────────────────
 	authSvc   := service.NewAuthService(userRepo, sessionRepo, cfg.JWT)
 	rbacSvc   := service.NewRBACService(userRepo)
 	secretSvc := service.NewSecretService(secretRepo, cipher)
 	mediaSvc  := service.NewMediaService(mediaRepo, minioClient, cipher)
+	auditSvc  := service.NewAuditService(auditRepo)
 
 	// ── 9. Хендлеры ───────────────────────────────────────────────────────────
-	authH   := handler.NewAuthHandler(authSvc, cfg.JWT)
-	secretH := handler.NewSecretHandler(secretSvc)
-	mediaH  := handler.NewMediaHandler(mediaSvc, cfg.Upload.MaxSize)
+	authH   := handler.NewAuthHandler(authSvc, auditSvc, cfg.JWT)
+	secretH := handler.NewSecretHandler(secretSvc, auditSvc)
+	mediaH  := handler.NewMediaHandler(mediaSvc, auditSvc, cfg.Upload.MaxSize)
+	auditH  := handler.NewAuditHandler(auditSvc)
 
 	// ── 10. Gin роутер ────────────────────────────────────────────────────────
 	if cfg.App.Env == "production" {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	router := setupRouter(authH, secretH, mediaH, authSvc, rbacSvc)
+	router := setupRouter(authH, secretH, mediaH, auditH, authSvc, rbacSvc)
 
 	// ── 11. HTTP сервер с Graceful Shutdown ───────────────────────────────────
 	srv := &http.Server{
@@ -160,6 +163,7 @@ func setupRouter(
 	authH   *handler.AuthHandler,
 	secretH *handler.SecretHandler,
 	mediaH  *handler.MediaHandler,
+	auditH  *handler.AuditHandler,
 	authSvc service.AuthService,
 	rbacSvc service.RBACService,
 ) *gin.Engine {
@@ -220,6 +224,7 @@ func setupRouter(
 		admin.GET("/users", func(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{"message": "admin: список пользователей (TODO)"})
 		})
+		admin.GET("/audit-logs", auditH.ListLogs)
 	}
 
 	return r

@@ -106,4 +106,7 @@ export const api = {
     return response.blob();
   },
   deleteMedia: (id) => fetchWithAuth(`/media/${id}`, { method: 'DELETE' }),
+
+  // Admin
+  getAuditLogs: (limit = 50, offset = 0) => fetchWithAuth(`/admin/audit-logs?limit=${limit}&offset=${offset}`, { method: 'GET' }),
 };

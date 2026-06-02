@@ -18,12 +18,13 @@ import (
 // MediaHandler — хендлер управления медиа-объектами.
 type MediaHandler struct {
 	mediaSvc  service.MediaService
+	auditSvc  service.AuditService
 	maxUpload int64 // максимальный размер загрузки в байтах
 }
 
 // NewMediaHandler создаёт новый MediaHandler.
-func NewMediaHandler(mediaSvc service.MediaService, maxUpload int64) *MediaHandler {
-	return &MediaHandler{mediaSvc: mediaSvc, maxUpload: maxUpload}
+func NewMediaHandler(mediaSvc service.MediaService, auditSvc service.AuditService, maxUpload int64) *MediaHandler {
+	return &MediaHandler{mediaSvc: mediaSvc, auditSvc: auditSvc, maxUpload: maxUpload}
 }
 
 // Upload godoc
@@ -76,11 +77,20 @@ func (h *MediaHandler) Upload(c *gin.Context) {
 		src,
 		fileHeader.Size,
 	)
+	
+	ip := c.ClientIP()
+	ua := c.Request.UserAgent()
+	resource := "media"
+
 	if err != nil {
 		log.Error().Err(err).Str("filename", fileHeader.Filename).Msg("MediaHandler.Upload")
+		details := err.Error()
+		h.auditSvc.LogAction(c.Request.Context(), &claims.UserID, "upload", &resource, nil, &ip, &ua, "failure", &details)
 		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "ошибка загрузки файла"})
 		return
 	}
+
+	h.auditSvc.LogAction(c.Request.Context(), &claims.UserID, "upload", &resource, &resp.ID, &ip, &ua, "success", nil)
 
 	log.Info().
 		Str("media_id", resp.ID.String()).
@@ -109,10 +119,19 @@ func (h *MediaHandler) Download(c *gin.Context) {
 	}
 
 	meta, data, err := h.mediaSvc.Download(c.Request.Context(), claims.UserID, claims.RoleName, id)
+	
+	ip := c.ClientIP()
+	ua := c.Request.UserAgent()
+	resource := "media"
+
 	if err != nil {
+		details := err.Error()
+		h.auditSvc.LogAction(c.Request.Context(), &claims.UserID, "download", &resource, &id, &ip, &ua, "failure", &details)
 		h.handleMediaError(c, err)
 		return
 	}
+
+	h.auditSvc.LogAction(c.Request.Context(), &claims.UserID, "download", &resource, &id, &ip, &ua, "success", nil)
 
 	// Отдаём файл с оригинальным именем и content-type
 	c.Header("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, meta.Filename))
@@ -165,10 +184,18 @@ func (h *MediaHandler) Delete(c *gin.Context) {
 		return
 	}
 
+	ip := c.ClientIP()
+	ua := c.Request.UserAgent()
+	resource := "media"
+
 	if err := h.mediaSvc.Delete(c.Request.Context(), claims.UserID, claims.RoleName, id); err != nil {
+		details := err.Error()
+		h.auditSvc.LogAction(c.Request.Context(), &claims.UserID, "delete", &resource, &id, &ip, &ua, "failure", &details)
 		h.handleMediaError(c, err)
 		return
 	}
+
+	h.auditSvc.LogAction(c.Request.Context(), &claims.UserID, "delete", &resource, &id, &ip, &ua, "success", nil)
 
 	c.Status(http.StatusNoContent)
 }
