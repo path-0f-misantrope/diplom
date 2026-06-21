@@ -33,19 +33,19 @@ export default function Register() {
       <div className="glass-panel" style={{ width: '100%', maxWidth: '400px' }}>
         <div className="text-center" style={{ marginBottom: '24px' }}>
           <ShieldCheck size={48} color="var(--success)" style={{ marginBottom: '16px' }} />
-          <h2>Create Account</h2>
-          <p style={{ color: 'var(--text-secondary)' }}>Get started with secure storage</p>
+          <h2>Создать аккаунт</h2>
+          <p style={{ color: 'var(--text-secondary)' }}>Начните работу с защищённым хранилищем</p>
         </div>
 
         {error && <div className="error-message">{error}</div>}
-        {success && <div className="success-message">Account created! Redirecting to login...</div>}
+        {success && <div className="success-message">Аккаунт создан! Перенаправление на страницу входа...</div>}
 
         {!success && (
           <form onSubmit={handleRegister}>
             <input
               type="text"
               className="input-field"
-              placeholder="Username"
+              placeholder="Имя пользователя"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               required
@@ -55,7 +55,7 @@ export default function Register() {
             <input
               type="email"
               className="input-field"
-              placeholder="Email"
+              placeholder="Эл. почта"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -63,20 +63,20 @@ export default function Register() {
             <input
               type="password"
               className="input-field"
-              placeholder="Password"
+              placeholder="Пароль"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={8}
             />
             <button type="submit" className="btn" disabled={loading} style={{ background: 'var(--success)' }}>
-              {loading ? <span className="spinner"></span> : 'Sign Up'}
+              {loading ? <span className="spinner"></span> : 'Зарегистрироваться'}
             </button>
           </form>
         )}
 
         <p className="text-center mt-4" style={{ fontSize: '0.875rem' }}>
-          Already have an account? <Link to="/login" style={{ color: 'var(--accent)' }}>Sign in</Link>
+          Уже есть аккаунт? <Link to="/login" style={{ color: 'var(--accent)' }}>Войти</Link>
         </p>
       </div>
     </div>

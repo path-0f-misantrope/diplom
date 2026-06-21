@@ -31,8 +31,8 @@ export default function Login() {
       <div className="glass-panel" style={{ width: '100%', maxWidth: '400px' }}>
         <div className="text-center" style={{ marginBottom: '24px' }}>
           <Lock size={48} color="var(--accent)" style={{ marginBottom: '16px' }} />
-          <h2>Welcome Back</h2>
-          <p style={{ color: 'var(--text-secondary)' }}>Sign in to your secure storage</p>
+          <h2>С возвращением</h2>
+          <p style={{ color: 'var(--text-secondary)' }}>Войдите в защищённое хранилище</p>
         </div>
 
         {error && <div className="error-message">{error}</div>}
@@ -41,7 +41,7 @@ export default function Login() {
           <input
             type="email"
             className="input-field"
-            placeholder="Email"
+            placeholder="Эл. почта"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -50,19 +50,19 @@ export default function Login() {
           <input
             type="password"
             className="input-field"
-            placeholder="Password"
+            placeholder="Пароль"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
             autoComplete="current-password"
           />
           <button type="submit" className="btn" disabled={loading}>
-            {loading ? <span className="spinner"></span> : 'Sign In'}
+            {loading ? <span className="spinner"></span> : 'Войти'}
           </button>
         </form>
 
         <p className="text-center mt-4" style={{ fontSize: '0.875rem' }}>
-          Don't have an account? <Link to="/register" style={{ color: 'var(--accent)' }}>Create one</Link>
+          Нет аккаунта? <Link to="/register" style={{ color: 'var(--accent)' }}>Зарегистрироваться</Link>
         </p>
       </div>
     </div>

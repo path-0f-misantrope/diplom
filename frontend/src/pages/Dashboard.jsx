@@ -62,7 +62,7 @@ export default function Dashboard() {
   };
 
   const handleDeleteSecret = async (id) => {
-    if (!window.confirm('Are you sure?')) return;
+    if (!window.confirm('Вы уверены?')) return;
     try {
       await api.deleteSecret(id);
       setRevealedSecrets(prev => { const n = {...prev}; delete n[id]; return n; });
@@ -115,12 +115,12 @@ export default function Dashboard() {
       a.remove();
       window.URL.revokeObjectURL(url);
     } catch (err) {
-      alert('Failed to download');
+      alert('Не удалось скачать');
     }
   };
 
   const handleDeleteMedia = async (id) => {
-    if (!window.confirm('Delete media?')) return;
+    if (!window.confirm('Удалить файм?')) return;
     try {
       await api.deleteMedia(id);
       // освобождаем objectURL если был превью
@@ -158,16 +158,16 @@ export default function Dashboard() {
     <>
       <nav>
         <Link to="/dashboard" className="logo">
-          <Shield size={24} /> Secure Storage
+          <Shield size={24} /> Защищённое хранилище
         </Link>
         <div className="user-info" style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
           {(userRole === 'admin' || userRole === 'manager') && (
             <Link to="/admin" className="btn btn-ghost" style={{ padding: '8px 16px', textDecoration: 'none', color: '#ffaaaa' }}>
-              Admin Panel
+              Админ-панель
             </Link>
           )}
           <button onClick={handleLogout} className="btn btn-ghost" style={{ padding: '8px 16px' }}>
-            <LogOut size={16} /> Logout
+            <LogOut size={16} /> Выйти
           </button>
         </div>
       </nav>
@@ -177,32 +177,32 @@ export default function Dashboard() {
           
           {/* ----- Секреты ----- */}
           <div className="glass-panel">
-            <h3><FileText size={20} style={{ verticalAlign: 'middle', marginRight: '8px' }}/> Your Secrets</h3>
+            <h3><FileText size={20} style={{ verticalAlign: 'middle', marginRight: '8px' }}/> Ваши секреты</h3>
             
             <form onSubmit={handleCreateSecret} style={{ marginBottom: '24px' }}>
               <input 
                 type="text" 
                 className="input-field" 
-                placeholder="Secret Title" 
+                placeholder="Название секрета" 
                 value={newTitle} 
                 onChange={e => setNewTitle(e.target.value)} 
                 required 
               />
               <textarea 
                 className="input-field" 
-                placeholder="Top Secret Content..." 
+                placeholder="Содержимое секрета..." 
                 rows="3" 
                 value={newPayload} 
                 onChange={e => setNewPayload(e.target.value)} 
                 style={{ resize: 'vertical' }}
                 required 
               />
-              <button type="submit" className="btn mb-4">Save Secret</button>
+              <button type="submit" className="btn mb-4">Сохранить секрет</button>
             </form>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {secrets.length === 0 ? (
-                <p style={{ color: 'var(--text-secondary)' }}>No secrets found.</p>
+                <p style={{ color: 'var(--text-secondary)' }}>Секреты не найдены.</p>
               ) : (
                 secrets.map(secret => (
                   <div key={secret.id} style={{ background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: '8px' }}>
@@ -218,7 +218,7 @@ export default function Dashboard() {
                           onClick={() => handleRevealSecret(secret.id)}
                           className="btn btn-ghost"
                           style={{ width: 'auto', padding: '8px', border: 'none' }}
-                          title={revealedSecrets[secret.id] !== undefined ? 'Hide' : 'Reveal'}
+                          title={revealedSecrets[secret.id] !== undefined ? 'Скрыть' : 'Показать'}
                         >
                           <Eye size={16} />
                         </button>
@@ -250,7 +250,7 @@ export default function Dashboard() {
 
           {/* ----- Медиа ----- */}
           <div className="glass-panel">
-            <h3><UploadCloud size={20} style={{ verticalAlign: 'middle', marginRight: '8px' }}/> Secure Media</h3>
+            <h3><UploadCloud size={20} style={{ verticalAlign: 'middle', marginRight: '8px' }}/> Защищённые файлы</h3>
             
             <div style={{ marginBottom: '24px', position: 'relative' }}>
               <input 
@@ -260,13 +260,13 @@ export default function Dashboard() {
                 disabled={uploading}
               />
               <div style={{ padding: '32px', textAlign: 'center', border: '2px dashed var(--panel-border)', borderRadius: '8px', background: 'rgba(255,255,255,0.02)' }}>
-                 {uploading ? <span className="spinner"></span> : <><UploadCloud size={32} color="var(--text-secondary)" /><br/><span>Click or drag file to upload</span></>}
+                 {uploading ? <span className="spinner"></span> : <><UploadCloud size={32} color="var(--text-secondary)" /><br/><span>Нажмите или перетащите файл для загрузки</span></>}
               </div>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {media.length === 0 ? (
-                <p style={{ color: 'var(--text-secondary)' }}>No files uploaded.</p>
+                <p style={{ color: 'var(--text-secondary)' }}>Файлы не загружены.</p>
               ) : (
                 media.map(m => (
                   <div key={m.id} style={{ background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: '8px' }}>
@@ -291,10 +291,10 @@ export default function Dashboard() {
                             <Eye size={16} />
                           </button>
                         )}
-                        <button onClick={() => handleDownloadMedia(m.id, m.filename)} className="btn btn-ghost" style={{ width: 'auto', padding: '8px', border: 'none' }} title="Download">
+                        <button onClick={() => handleDownloadMedia(m.id, m.filename)} className="btn btn-ghost" style={{ width: 'auto', padding: '8px', border: 'none' }} title="Скачать">
                           <Download size={16} />
                         </button>
-                        <button onClick={() => handleDeleteMedia(m.id)} className="btn btn-danger" style={{ width: 'auto', padding: '8px' }} title="Delete">
+                        <button onClick={() => handleDeleteMedia(m.id)} className="btn btn-danger" style={{ width: 'auto', padding: '8px' }} title="Удалить">
                           <Trash2 size={16} />
                         </button>
                       </div>

@@ -46,7 +46,7 @@ export default function AdminPanel() {
   };
 
   const handleDeleteSecret = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this secret?')) return;
+    if (!window.confirm('Вы уверены, что хотите удалить этот секрет?')) return;
     try {
       await api.deleteSecret(id);
       setRevealedSecrets(prev => { const n = {...prev}; delete n[id]; return n; });
@@ -81,12 +81,12 @@ export default function AdminPanel() {
       a.remove();
       window.URL.revokeObjectURL(url);
     } catch (err) {
-      alert('Failed to download');
+      alert('Не удалось скачать');
     }
   };
 
   const handleDeleteMedia = async (id) => {
-    if (!window.confirm('Delete media?')) return;
+    if (!window.confirm('Удалить файл?')) return;
     try {
       await api.deleteMedia(id);
       if (previewedMedia[id]) {
@@ -110,7 +110,7 @@ export default function AdminPanel() {
       const url = window.URL.createObjectURL(blob);
       setPreviewedMedia(prev => ({ ...prev, [id]: { url, contentType } }));
     } catch (err) {
-      alert('Failed to load preview');
+      alert('Не удалось загрузить превью');
     }
   };
 
@@ -122,33 +122,33 @@ export default function AdminPanel() {
     <>
       <nav>
         <Link to="/dashboard" className="logo">
-          <Shield size={24} /> Secure Storage (Admin)
+          <Shield size={24} /> Защищённое хранилище (Админ)
         </Link>
         <div className="user-info" style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
           <Link to="/dashboard" className="btn btn-ghost" style={{ padding: '8px 16px', textDecoration: 'none' }}>
-            To Dashboard
+            На главную
           </Link>
           <button onClick={handleLogout} className="btn btn-ghost" style={{ padding: '8px 16px' }}>
-            <LogOut size={16} /> Logout
+            <LogOut size={16} /> Выйти
           </button>
         </div>
       </nav>
 
       <div className="container">
         <div style={{ marginBottom: '24px', padding: '16px', background: 'rgba(255,50,50,0.1)', border: '1px solid rgba(255,50,50,0.3)', borderRadius: '8px', color: '#ffaaaa' }}>
-          <h2 style={{ marginTop: 0, display: 'flex', alignItems: 'center', gap: '8px' }}><Users size={24} /> Admin Panel Overview</h2>
-          <p style={{ margin: 0 }}>You are viewing all users' secrets and media objects across the platform.</p>
+          <h2 style={{ marginTop: 0, display: 'flex', alignItems: 'center', gap: '8px' }}><Users size={24} /> Обзор админ-панели</h2>
+          <p style={{ margin: 0 }}>Вы просматриваете секреты и медиафайлы всех пользователей платформы.</p>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
           
           {/* ----- Секреты ----- */}
           <div className="glass-panel">
-            <h3><FileText size={20} style={{ verticalAlign: 'middle', marginRight: '8px' }}/> All Platform Secrets</h3>
+            <h3><FileText size={20} style={{ verticalAlign: 'middle', marginRight: '8px' }}/> Все секреты платформы</h3>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {secrets.length === 0 ? (
-                <p style={{ color: 'var(--text-secondary)' }}>No secrets found in the system.</p>
+                <p style={{ color: 'var(--text-secondary)' }}>Секреты в системе не найдены.</p>
               ) : (
                 secrets.map(secret => (
                   <div key={secret.id} style={{ background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: '8px', borderLeft: '3px solid var(--accent)' }}>
@@ -156,7 +156,7 @@ export default function AdminPanel() {
                       <div>
                         <h4 style={{ margin: 0, color: 'var(--accent)' }}>{secret.title}</h4>
                         <div style={{ fontSize: '0.8rem', color: '#aaa', marginTop: '4px' }}>
-                          Owner ID: {secret.owner_id}
+                          Владелец: {secret.owner_id}
                         </div>
                         <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
                           {new Date(secret.created_at).toLocaleString()}
@@ -167,7 +167,7 @@ export default function AdminPanel() {
                           onClick={() => handleRevealSecret(secret.id)}
                           className="btn btn-ghost"
                           style={{ width: 'auto', padding: '8px', border: 'none' }}
-                          title={revealedSecrets[secret.id] !== undefined ? 'Hide' : 'Reveal'}
+                          title={revealedSecrets[secret.id] !== undefined ? 'Скрыть' : 'Показать'}
                         >
                           <Eye size={16} />
                         </button>
@@ -199,11 +199,11 @@ export default function AdminPanel() {
 
           {/* ----- Медиа ----- */}
           <div className="glass-panel">
-            <h3><UploadCloud size={20} style={{ verticalAlign: 'middle', marginRight: '8px' }}/> All Platform Media</h3>
+            <h3><UploadCloud size={20} style={{ verticalAlign: 'middle', marginRight: '8px' }}/> Все файлы платформы</h3>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {media.length === 0 ? (
-                <p style={{ color: 'var(--text-secondary)' }}>No files uploaded in the system.</p>
+                <p style={{ color: 'var(--text-secondary)' }}>Файлы в системе не найдены.</p>
               ) : (
                 media.map(m => (
                   <div key={m.id} style={{ background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: '8px', borderLeft: '3px solid #8e44ad' }}>
@@ -211,7 +211,7 @@ export default function AdminPanel() {
                       <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginRight: '16px' }}>
                         <h4 style={{ margin: 0 }}>{m.filename}</h4>
                         <div style={{ fontSize: '0.8rem', color: '#aaa', marginTop: '4px' }}>
-                          Owner ID: {m.owner_id}
+                          Владелец: {m.owner_id}
                         </div>
                         <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                           {(m.size_bytes / 1024).toFixed(1)} KB &nbsp;·&nbsp; {m.content_type}
@@ -226,15 +226,15 @@ export default function AdminPanel() {
                             onClick={() => handlePreviewMedia(m.id, m.content_type)}
                             className="btn btn-ghost"
                             style={{ width: 'auto', padding: '8px', border: 'none' }}
-                            title={previewedMedia[m.id] ? 'Hide' : 'Preview'}
+                            title={previewedMedia[m.id] ? 'Скрыть' : 'Превью'}
                           >
                             <Eye size={16} />
                           </button>
                         )}
-                        <button onClick={() => handleDownloadMedia(m.id, m.filename)} className="btn btn-ghost" style={{ width: 'auto', padding: '8px', border: 'none' }} title="Download">
+                        <button onClick={() => handleDownloadMedia(m.id, m.filename)} className="btn btn-ghost" style={{ width: 'auto', padding: '8px', border: 'none' }} title="Скачать">
                           <Download size={16} />
                         </button>
-                        <button onClick={() => handleDeleteMedia(m.id)} className="btn btn-danger" style={{ width: 'auto', padding: '8px' }} title="Delete">
+                        <button onClick={() => handleDeleteMedia(m.id)} className="btn btn-danger" style={{ width: 'auto', padding: '8px' }} title="Удалить">
                           <Trash2 size={16} />
                         </button>
                       </div>
@@ -268,23 +268,23 @@ export default function AdminPanel() {
 
         {/* ----- Аудит-логи ----- */}
         <div className="glass-panel" style={{ marginTop: '24px' }}>
-          <h3><Activity size={20} style={{ verticalAlign: 'middle', marginRight: '8px' }}/> System Audit Logs</h3>
+          <h3><Activity size={20} style={{ verticalAlign: 'middle', marginRight: '8px' }}/> Аудит-логи системы</h3>
           <div style={{ overflowX: 'auto', marginTop: '16px' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.2)' }}>
-                  <th style={{ padding: '12px' }}>Time</th>
-                  <th style={{ padding: '12px' }}>User ID</th>
-                  <th style={{ padding: '12px' }}>Action</th>
-                  <th style={{ padding: '12px' }}>Resource</th>
-                  <th style={{ padding: '12px' }}>Status</th>
-                  <th style={{ padding: '12px' }}>IP / Agent</th>
+                  <th style={{ padding: '12px' }}>Время</th>
+                  <th style={{ padding: '12px' }}>ID пользователя</th>
+                  <th style={{ padding: '12px' }}>Действие</th>
+                  <th style={{ padding: '12px' }}>Ресурс</th>
+                  <th style={{ padding: '12px' }}>Статус</th>
+                  <th style={{ padding: '12px' }}>IP / Агент</th>
                 </tr>
               </thead>
               <tbody>
                 {auditLogs.length === 0 ? (
                   <tr>
-                    <td colSpan="6" style={{ padding: '12px', textAlign: 'center', color: 'var(--text-secondary)' }}>No audit logs found.</td>
+                    <td colSpan="6" style={{ padding: '12px', textAlign: 'center', color: 'var(--text-secondary)' }}>Аудит-логи не найдены.</td>
                   </tr>
                 ) : (
                   auditLogs.map(log => (
